@@ -1,41 +1,113 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom'
 
 import './style.css'
 
 function Inicio() {
+  const navigate = useNavigate()
 
-  const navigate = useNavigate();
-  const [todoslositems, setTodoslositems] = useState([]);
+  const [todosLosItems, setTodosLosItems] = useState([])
+  const [busqueda, setBusqueda] = useState('')
+  const [rareza, setRareza] = useState('Todas')
+  const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    // Consumimos el endpoint de objetos mágicos de la versión 2014 / SRD
-    fetch(`https://dnd5eapi.co`)
-      .then(response => response.json())
-      .then(responseData => setTodoslositems(responseData.results))
-      .catch(error => console.error("Error:", error));
-  }, []); 
+    fetch('https://www.dnd5eapi.co/api/2014/magic-items')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al obtener los objetos mágicos')
+        }
 
-  console.log(todoslositems);
+        return response.json()
+      })
+      .then(data => {
+        setTodosLosItems(data.results)
+        setCargando(false)
+      })
+      .catch(error => {
+        console.error('Error:', error)
+        setCargando(false)
+      })
+  }, [])
 
-  if (todoslositems.length === 0) {
-    return <p>Cargando...</p>;
-  }
+  
 
   return (
-    <div className="c-lista">
-      {todoslositems.map((item) => (
-        <div 
-          className='c-lista-item' // Cambiado para mayor consistencia de nombres
-          key={item.index}          // Es mejor poner el key en el contenedor principal del map
-          onClick={() => navigate(`/item/${item.index}`)} // Redirige usando el index único del objeto mágico
+    <main className="inicio">
+
+      <h1>Objetos mágicos</h1>
+
+      {/* Buscador */}
+      <div className="controles">
+
+        <input
+          type="text"
+          placeholder="Buscar objeto mágico..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+
+        {/* Filtro por rareza */}
+        <select
+          value={rareza}
+          onChange={(e) => setRareza(e.target.value)}
         >
-          {/* El campo 'index' es el identificador de texto amigable (ej: 'bag-of-holding') */}
-          <p className="item-id">#{item.index}</p>
-          <p className="item-name">{item.name}</p>
-        </div>
-      ))}
-    </div>
+          <option value="Todas">Todas las rarezas</option>
+          <option value="Common">Common</option>
+          <option value="Uncommon">Uncommon</option>
+          <option value="Rare">Rare</option>
+          <option value="Very Rare">Very Rare</option>
+          <option value="Legendary">Legendary</option>
+          <option value="Artifact">Artifact</option>
+        </select>
+
+      </div>
+
+      {/* Cantidad de resultados */}
+      <p>
+        Resultados: {itemsFiltrados.length}
+      </p>
+
+      {/* Lista */}
+      <div className="c-lista">
+
+        {itemsFiltrados.length > 0 ? (
+
+          itemsFiltrados.map((item) => (
+
+            <div
+              className="c-lista-item"
+              key={item.index}
+              onClick={() => navigate(`/item/${item.index}`)}
+            >
+
+              <p className="item-id">
+                #{item.index}
+              </p>
+
+              <p className="item-name">
+                {item.name}
+              </p>
+
+              <p className="item-rarity">
+                Rareza: {item.rarity}
+              </p>
+
+            </div>
+
+          ))
+
+        ) : (
+
+          <p>
+            No se encontraron objetos mágicos.
+          </p>
+
+        )}
+
+      </div>
+
+    </main>
   )
 }
 
